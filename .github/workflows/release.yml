@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    name: check the tag matches Cargo.toml
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compare
+        run: |
+          version="$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')"
+          if [ "${{ github.ref_name }}" != "v$version" ]; then
+            echo "tag ${{ github.ref_name }} does not match Cargo.toml version $version"
+            exit 1
+          fi
+
+  test:
+    needs: version
+    uses: ./.github/workflows/test.yml
+
+  publish:
+    name: publish release
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create the GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true

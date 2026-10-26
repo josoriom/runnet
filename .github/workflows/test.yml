@@ -1,0 +1,91 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  test:
+    name: test (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: aarch64-apple-darwin
+
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: ${{ matrix.target }}
+          components: clippy
+          rustflags: ""
+
+      - name: Lint
+        run: cargo clippy --locked --all-targets --target ${{ matrix.target }} -- -D warnings
+
+      - name: Test
+        run: cargo test --release --locked --target ${{ matrix.target }}
+
+  wasm:
+    name: test (wasm32-wasip1)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: wasm32-wasip1, wasm32-unknown-unknown
+          rustflags: ""
+
+      - name: Install wasmtime
+        uses: bytecodealliance/actions/wasmtime/setup@v1
+
+      - name: Build for the browser
+        run: cargo build --release --locked --target wasm32-unknown-unknown
+
+      - name: Test
+        env:
+          CARGO_TARGET_WASM32_WASIP1_RUNNER: wasmtime --dir=.
+        run: cargo test --release --locked --target wasm32-wasip1
+
+  minimum-rust:
+    name: test (rust 1.88)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: "1.88"
+          rustflags: ""
+
+      - name: Test
+        run: cargo test --locked
