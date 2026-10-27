@@ -24,7 +24,9 @@ fn main() -> Result<(), runnet::Error> {
 | `Model::from_bytes(bytes: &[u8]) -> Result<Model, Error>` | The bytes of an `.onnx` file | The model, ready to run |
 | `model.input_names(&self) -> &[String]` | Nothing | The input names, in the order `run` takes them |
 | `model.output_names(&self) -> &[String]` | Nothing | The output names, in the order `run` gives them |
-| `model.setting(&self, name: &str) -> Option<&str>` | A setting name, like `"points"` | The setting's text from the file, or `None` if it is missing |
+| `model.get_keys(&self) -> &[String]` | Nothing | The keys stored in the file, in file order |
+| `model.get_values(&self) -> &[String]` | Nothing | The values stored in the file, in the same order as the keys |
+| `model.get_value(&self, key: &str) -> Option<&str>` | A key, like `"points"` | The key's text from the file, or `None` if it is missing |
 | `model.run(&self, inputs: impl IntoIterator<Item = Tensor>) -> Result<Vec<Tensor>, Error>` | One `Tensor` per input name, in the same order | One `Tensor` per output name, in the same order |
 | `Tensor::from_floats(shape: impl Into<Vec<usize>>, values: impl Into<Vec<f32>>) -> Tensor` | The size of each axis, like `[2, 3]`, and the values row by row | A tensor of decimals |
 | `Tensor::from_ints(shape: impl Into<Vec<usize>>, values: impl Into<Vec<i64>>) -> Tensor` | The size of each axis and the values row by row | A tensor of whole numbers |

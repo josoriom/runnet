@@ -4,7 +4,8 @@ use crate::{error::Error, graph::Graph, model_file::ModelFile, tensor::Tensor};
 
 pub struct Model {
     graph: Graph,
-    settings: Vec<(String, String)>,
+    keys: Vec<String>,
+    values: Vec<String>,
 }
 
 impl Model {
@@ -19,9 +20,11 @@ impl Model {
 
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
         let file = ModelFile::read(bytes)?;
+        let (keys, values) = file.settings.into_iter().unzip();
         Ok(Self {
             graph: Graph::from_file(file.graph)?,
-            settings: file.settings,
+            keys,
+            values,
         })
     }
 
@@ -37,11 +40,19 @@ impl Model {
         self.graph.get_output_names()
     }
 
-    pub fn setting(&self, name: &str) -> Option<&str> {
-        self.settings
+    pub fn get_keys(&self) -> &[String] {
+        &self.keys
+    }
+
+    pub fn get_values(&self) -> &[String] {
+        &self.values
+    }
+
+    pub fn get_value(&self, key: &str) -> Option<&str> {
+        self.keys
             .iter()
-            .find(|(key, _)| key == name)
-            .map(|(_, value)| value.as_str())
+            .position(|name| name == key)
+            .map(|index| self.values[index].as_str())
     }
 }
 

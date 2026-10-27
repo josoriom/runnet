@@ -11,12 +11,20 @@ fn get_one_input() -> [Tensor; 1] {
 }
 
 #[test]
-fn a_setting_is_given_as_written_in_the_file() {
+fn a_value_is_given_as_written_in_the_file() {
     let model = load_model("settings").expect("model");
 
-    assert_eq!(model.setting("points"), Some("64"));
-    assert_eq!(model.setting("time_from"), Some(" 0.5 "));
-    assert_eq!(model.setting("missing"), None);
+    assert_eq!(model.get_value("points"), Some("64"));
+    assert_eq!(model.get_value("time_from"), Some(" 0.5 "));
+    assert_eq!(model.get_value("missing"), None);
+}
+
+#[test]
+fn keys_and_values_are_given_in_file_order() {
+    let model = load_model("settings").expect("model");
+
+    assert_eq!(model.get_keys(), ["points", "time_from"]);
+    assert_eq!(model.get_values(), ["64", " 0.5 "]);
 }
 
 #[test]
