@@ -99,13 +99,16 @@ def make_math_case():
         helper.make_node("Clip", ["x", "", "high"], ["clip_high"]),
         helper.make_node("Abs", ["counts"], ["abs_int"]),
         helper.make_node("Neg", ["counts"], ["neg_int"]),
+        helper.make_node("Clip", ["counts", "low_int", "high_int"], ["clip_int"]),
+        helper.make_node("Clip", ["counts", "low_int"], ["clip_int_low"]),
+        helper.make_node("Clip", ["counts", "", "high_int"], ["clip_int_high"]),
     ]
     outputs = [node.output[0] for node in nodes if node.output[0] != "abs_plus_one"]
     inputs = {
         "x": np.linspace(-3, 3, 15, dtype=np.float32).reshape(3, 5),
         "halves": np.array([-2.5, -1.5, -0.5, 0.5, 1.5, 2.5], dtype=np.float32),
     }
-    weights = [get_float("one", 1.0), get_float("low", -0.5), get_float("high", 0.8), get_ints("counts", [-3, 0, 4])]
+    weights = [get_float("one", 1.0), get_float("low", -0.5), get_float("high", 0.8), get_ints("counts", [-3, 0, 4]), get_ints("low_int", -1), get_ints("high_int", 2)]
     save_case("math", nodes, inputs, outputs, weights, opset=GELU_OPSET)
 
 

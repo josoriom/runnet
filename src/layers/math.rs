@@ -128,21 +128,42 @@ fn map(values: &[f32], get_output: impl Fn(f32) -> f32) -> Vec<f32> {
 impl Layer for ClipLayer {
     fn run(&self, inputs: &[Option<&Tensor>]) -> Result<Vec<Tensor>, Error> {
         let input = get_input(inputs, 0)?;
-        let min = get_limit(find_input(inputs, 1), f32::MIN)?;
-        let max = get_limit(find_input(inputs, 2), f32::MAX)?;
-        let values: Vec<_> = input
-            .floats()?
-            .iter()
-            .map(|value| value.max(min).min(max))
-            .collect();
-        Ok(vec![Tensor::from_floats(input.shape.clone(), values)])
+        let output = match &input.values {
+            Values::Float(values) => {
+                let min = get_float_limit(find_input(inputs, 1), f32::MIN)?;
+                let max = get_float_limit(find_input(inputs, 2), f32::MAX)?;
+                let clipped: Vec<_> = values.iter().map(|value| value.max(min).min(max)).collect();
+                Tensor::from_floats(input.shape.clone(), clipped)
+            }
+            Values::Int(values) => {
+                let min = get_int_limit(find_input(inputs, 1), i64::MIN)?;
+                let max = get_int_limit(find_input(inputs, 2), i64::MAX)?;
+                let clipped: Vec<_> = values
+                    .iter()
+                    .map(|value| (*value).max(min).min(max))
+                    .collect();
+                Tensor::from_ints(input.shape.clone(), clipped)
+            }
+        };
+        Ok(vec![output])
     }
 }
 
-fn get_limit(input: Option<&Tensor>, default: f32) -> Result<f32, Error> {
+fn get_float_limit(input: Option<&Tensor>, default: f32) -> Result<f32, Error> {
     match input {
         Some(tensor) => tensor
             .to_floats()
+            .first()
+            .copied()
+            .ok_or_else(|| Error::wrong_input("a clip limit is empty")),
+        None => Ok(default),
+    }
+}
+
+fn get_int_limit(input: Option<&Tensor>, default: i64) -> Result<i64, Error> {
+    match input {
+        Some(tensor) => tensor
+            .to_ints()
             .first()
             .copied()
             .ok_or_else(|| Error::wrong_input("a clip limit is empty")),
